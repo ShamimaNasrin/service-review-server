@@ -51,14 +51,6 @@ async function run() {
             res.send(result);
         });
 
-        // //READ reviews data from MnngoDB & create reviews api
-        // app.get('/allreviews', async (req, res) => {
-        //     console.log(req.query);
-        //     const query = {};
-        //     const cursor = reviewCollection.find(query);
-        //     const allreviews = await cursor.toArray();
-        //     res.send(allreviews);
-        // })
 
         //allreviews api using query parameter (service id)
         app.get('/allreviews', async (req, res) => {
@@ -93,10 +85,21 @@ async function run() {
         //delete review
         app.delete('/myreviews/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await reviewCollection.deleteOne(query);
             res.send(result);
         });
+
+        //send data to mongo and create service api
+        app.post('/addservice', async (req, res) => {
+            const service = req.body;
+            //console.log(service);
+            const result = await serviceCollection.insertOne(service);
+            res.send(result);
+        });
+
+
+
 
         //update review
         app.put('/myreviews/:id', async (req, res) => {
@@ -104,7 +107,7 @@ async function run() {
             const filter = { _id: ObjectId(id) };
             const reviewinfo = req.body;
             const option = { upsert: true };
-          
+
             const updatedReview = {
                 $set: {
                     name: reviewinfo.name,
@@ -115,7 +118,6 @@ async function run() {
             const result = await reviewCollection.updateOne(filter, updatedReview, option);
             res.send(result);
         })
-
 
 
 
