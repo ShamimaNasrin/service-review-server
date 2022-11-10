@@ -43,14 +43,37 @@ async function run() {
             res.send(service);
         })
 
-         //send data to mongo and create reviews api
-         app.post('/reviews', async (req, res) => {
+        //send data to mongo and create reviews api
+        app.post('/reviews', async (req, res) => {
             const review = req.body;
-            console.log(review);
+            //console.log(review);
             const result = await reviewCollection.insertOne(review);
             res.send(result);
         });
 
+        // //READ reviews data from MnngoDB & create reviews api
+        // app.get('/allreviews', async (req, res) => {
+        //     console.log(req.query);
+        //     const query = {};
+        //     const cursor = reviewCollection.find(query);
+        //     const allreviews = await cursor.toArray();
+        //     res.send(allreviews);
+        // })
+
+        //allreviews api using query parameter (service id)
+        app.get('/allreviews', async (req, res) => {
+            let query = {};
+
+            if (req.query.service) {
+                query = {
+                    service: req.query.service
+                }
+            }
+
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
+        });
     }
     finally {
 
