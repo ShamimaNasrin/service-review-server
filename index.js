@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -13,6 +14,26 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.klfob8q.mongodb.net/?retryWrites=true&w=majority`;
 // console.log(uri);
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+// token verify
+function jwtVerify(req, res, next) {
+    //console.log(req.headers.authorization);
+    const authHeader = req.headers.authorization;
+
+    //check token exist or not
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized' })
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        //check is that token right/valid or not 
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 async function run() {
     try {
@@ -68,9 +89,15 @@ async function run() {
         });
 
         //myreviews api using query parameter (email)
-        app.get('/myreviews', async (req, res) => {
-            let query = {};
+        app.get('/myreviews', jwtVerify, async (req, res) => {
 
+            const decoded = req.decoded;
+            console.log('inside api', decoded);
+            if (decoded.email !== req.query.email) {
+                res.status(403).send({ message: 'Forbidden access' });
+            }
+
+            let query = {};
             if (req.query.email) {
                 query = {
                     email: req.query.email
@@ -98,7 +125,13 @@ async function run() {
             res.send(result);
         });
 
-
+        //Token
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            // console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
+            res.send({ token });
+        });
 
 
         //update review
